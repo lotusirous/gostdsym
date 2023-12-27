@@ -1,21 +1,23 @@
 package gostdsym
 
 import (
-	"os"
 	"reflect"
 	"sort"
 	"testing"
 )
 
 func TestAll(t *testing.T) {
-	wd, _ := os.Getwd()
+	_, err := LoadPackages("std")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	for _, test := range []struct {
 		in   string
-		dir  string
 		want []string
 	}{
-		{in: "cmp", dir: wd, want: []string{"cmp", "cmp.Less", "cmp.Ordered", "cmp.Compare"}},
-		{in: "html/template", dir: wd, want: []string{
+		{in: "cmp", want: []string{"cmp", "cmp.Less", "cmp.Ordered", "cmp.Compare"}},
+		{in: "html/template", want: []string{
 			"html/template",
 			"html/template.CSS",
 			"html/template.ErrAmbigContext",
@@ -78,8 +80,8 @@ func TestAll(t *testing.T) {
 			"html/template.parseGlob",
 		}},
 		{
-			in:  "container/list",
-			dir: wd,
+			in: "container/list",
+
 			want: []string{
 				"container/list",
 				"container/list.Element",
@@ -106,8 +108,8 @@ func TestAll(t *testing.T) {
 		},
 
 		{
-			in:  "context",
-			dir: wd,
+			in: "context",
+
 			want: []string{
 				"context",
 				"context.AfterFunc",
@@ -130,8 +132,7 @@ func TestAll(t *testing.T) {
 			},
 		},
 		{
-			in:  "errors",
-			dir: wd,
+			in: "errors",
 			want: []string{
 				"errors",
 				"errors.Is",
@@ -143,7 +144,7 @@ func TestAll(t *testing.T) {
 			},
 		},
 	} {
-		got, err := GetPackageSymbols(test.in, test.dir)
+		got, err := GetPackageSymbols(test.in)
 		if err != nil {
 			t.Fatalf("want no error for MustExtract, got: %v", err)
 		}

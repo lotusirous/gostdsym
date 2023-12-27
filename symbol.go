@@ -7,20 +7,13 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
-	"regexp"
+	"os"
 	"slices"
-	"strings"
 
 	"golang.org/x/tools/go/packages"
 )
 
-var internalPkg = regexp.MustCompile(`(^|/)internal($|/)`)
-
-func isSkipPackage(v string) bool {
-	return internalPkg.MatchString(v) || strings.HasPrefix(v, "vendor/")
-}
-
-// LoadPackages returns a list of packages.
+// LoadPackages returns all packages from a given pattern.
 func LoadPackages(pattern string) ([]string, error) {
 	pkgs, err := packages.Load(nil, pattern)
 	if err != nil {
@@ -28,23 +21,23 @@ func LoadPackages(pattern string) ([]string, error) {
 	}
 	out := make([]string, len(pkgs))
 	for i := 0; i < len(pkgs); i++ {
-		path := pkgs[i].PkgPath
-		if isSkipPackage(path) {
-			continue
-		}
 		out[i] = pkgs[i].PkgPath
 	}
 	return out, nil
 }
 
 // GetPackageSymbols extracts all exported symbols from a package.
-func GetPackageSymbols(name, srcDir string) ([]string, error) {
-	buildPkg, err := build.Import(name, srcDir, build.ImportComment)
+func GetPackageSymbols(pattern string) ([]string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	buildPkg, err := build.Import(pattern, wd, build.ImportComment)
 	if err != nil {
 		return nil, err
 	}
 
-	syms, err := buildSymbols(buildPkg)
+	syms, err := parsePackage(buildPkg)
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +50,10 @@ func GetPackageSymbols(name, srcDir string) ([]string, error) {
 	return syms, nil
 }
 
-func buildSymbols(pkg *build.Package) ([]string, error) {
-	fset := token.NewFileSet()
+func parsePackage(pkg *build.Package) ([]string, error) {
+	// include tells parser.ParseDir which files to include.
+	// That means the file must be in the build package's GoFiles or CgoFiles
+	// list only (no tag-ignored files, tests, swig or other non-Go files).
 	include := func(info fs.FileInfo) bool {
 		for _, name := range pkg.GoFiles {
 			if name == info.Name() {
@@ -67,14 +62,24 @@ func buildSymbols(pkg *build.Package) ([]string, error) {
 		}
 		return false
 	}
+	fset := token.NewFileSet()
 	pkgs, err := parser.ParseDir(fset, pkg.Dir, include, parser.ParseComments)
 	if err != nil {
 		return nil, err
 	}
-	astPkg, ok := pkgs[pkg.Name]
-	if !ok {
-		return nil, fmt.Errorf("not found package name: %s", pkg.Name)
+	if len(pkgs) == 0 {
+		return nil, fmt.Errorf("no source-code package in directory %s", pkg.Dir)
 	}
+	astPkg := pkgs[pkg.Name]
+
+	// TODO: go/doc does not include typed constants in the constants
+	// list, which is what we want. For instance, time.Sunday is of type
+	// time.Weekday, so it is defined in the type but not in the
+	// Consts list for the package. This prevents
+	//	go doc time.Sunday
+	// from finding the symbol. Work around this for now, but we
+	// should fix it in go/doc.
+	// A similar story applies to factory functions.
 	docPkg := doc.New(astPkg, pkg.ImportPath, doc.AllDecls)
 
 	typs := types(docPkg)

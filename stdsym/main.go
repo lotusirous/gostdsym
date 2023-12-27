@@ -1,9 +1,11 @@
 package main
 
 import (
-	"bytes"
+	"bufio"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/lotusirous/gostdsym"
 )
@@ -17,20 +19,18 @@ func main() {
 }
 
 func run() error {
-	cwd, err := os.Getwd()
+	stdPattern := "std"
+	pkgs, err := gostdsym.LoadPackages(stdPattern)
 	if err != nil {
 		return err
 	}
-
-	pkgs, err := gostdsym.LoadPackages("std")
-	if err != nil {
-		return err
-	}
-
 	w := os.Stdout
-	var buf bytes.Buffer
-	for _, v := range pkgs {
-		out, err := gostdsym.GetPackageSymbols(v, cwd)
+	buf := bufio.NewWriter(w)
+	for _, pattern := range pkgs {
+		if isSkipPackage(pattern) {
+			continue
+		}
+		out, err := gostdsym.GetPackageSymbols(pattern)
 		if err != nil {
 			return err
 		}
@@ -38,6 +38,11 @@ func run() error {
 			buf.WriteString(sym + "\n")
 		}
 	}
-	_, err = buf.WriteTo(w)
-	return err
+	return buf.Flush()
+}
+
+var internalPkg = regexp.MustCompile(`(^|/)internal($|/)`)
+
+func isSkipPackage(v string) bool {
+	return internalPkg.MatchString(v) || strings.HasPrefix(v, "vendor/") && v != ""
 }
