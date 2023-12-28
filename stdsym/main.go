@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"log"
 	"os"
 	"regexp"
@@ -19,6 +20,12 @@ func main() {
 }
 
 func run() error {
+	web := flag.Bool("-web", false, "support web href")
+	flag.Parse()
+	deli := "."
+	if *web {
+		deli = "#"
+	}
 	stdPattern := "std"
 	pkgs, err := gostdsym.LoadPackages(stdPattern)
 	if err != nil {
@@ -30,7 +37,7 @@ func run() error {
 		if isSkipPackage(pattern) {
 			continue
 		}
-		out, err := gostdsym.GetPackageSymbols(pattern)
+		out, err := gostdsym.GetPackageSymbols(pattern, deli)
 		if err != nil {
 			return err
 		}

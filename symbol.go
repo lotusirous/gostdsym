@@ -27,7 +27,7 @@ func LoadPackages(pattern string) ([]string, error) {
 }
 
 // GetPackageSymbols extracts all exported symbols from a package.
-func GetPackageSymbols(pattern string) ([]string, error) {
+func GetPackageSymbols(pattern string, deli string) ([]string, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func GetPackageSymbols(pattern string) ([]string, error) {
 
 	syms = slices.Compact(syms)
 	for i := range syms {
-		syms[i] = buildPkg.ImportPath + "." + syms[i]
+		syms[i] = buildPkg.ImportPath + deli + syms[i]
 	}
 	syms = append(syms, buildPkg.ImportPath)
 	return syms, nil
