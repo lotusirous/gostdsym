@@ -20,7 +20,7 @@ func main() {
 }
 
 func run() error {
-	web := flag.Bool("-web", false, "support web href")
+	web := flag.Bool("web", false, "support web href")
 	flag.Parse()
 	deli := "."
 	if *web {
