@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -19,8 +20,16 @@ func main() {
 	}
 }
 
+func usage() {
+	fmt.Fprintf(os.Stderr, "usage: stdsym [options]\n")
+	fmt.Fprintf(os.Stderr, "Flags:\n")
+	flag.PrintDefaults()
+	os.Exit(2)
+}
+
 func run() error {
-	web := flag.Bool("web", false, "support web href")
+	web := flag.Bool("web", false, "enable pkgsite format with the '#' delimiter")
+	flag.Usage = usage
 	flag.Parse()
 	deli := "."
 	if *web {
