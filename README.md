@@ -24,10 +24,8 @@ Create a handy `gdoc` alias for instant symbol lookups:
 alias gdoc="stdsym |fzf | xargs go doc "
 ```
 
-If you want to view the results on [pkg.go.dev](https://pkg.go.dev/), use this
-alias. This example is for macOS, where the open command opens the link in the
-default browser:
+If you want to view the results on [pkg.go.dev](https://pkg.go.dev/) and preview them in `go doc`, use this alias. This example is for macOS, where the open command opens the link in the default browser
 
 ```bash
-alias gdocb="stdsym -web| fzf | awk '{print \"https://pkg.go.dev/\" \$1}' | xargs open"
+alias gd='stdsym -web | fzf --prompt "Symbols> " --preview "go doc \$(echo {} | sed s/#/./g)" --bind "enter:become( echo "https://pkg.go.dev/{}" |xargs open)"'
 ```
