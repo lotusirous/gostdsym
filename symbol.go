@@ -20,7 +20,7 @@ func LoadPackages(pattern string) ([]string, error) {
 		return nil, err
 	}
 	out := make([]string, len(pkgs))
-	for i := 0; i < len(pkgs); i++ {
+	for i := range pkgs {
 		out[i] = pkgs[i].PkgPath
 	}
 	return out, nil
@@ -55,12 +55,7 @@ func parsePackage(pkg *build.Package) ([]string, error) {
 	// That means the file must be in the build package's GoFiles or CgoFiles
 	// list only (no tag-ignored files, tests, swig or other non-Go files).
 	include := func(info fs.FileInfo) bool {
-		for _, name := range pkg.GoFiles {
-			if name == info.Name() {
-				return true
-			}
-		}
-		return false
+		return slices.Contains(pkg.GoFiles, info.Name())
 	}
 	fset := token.NewFileSet()
 	pkgs, err := parser.ParseDir(fset, pkg.Dir, include, parser.ParseComments)
