@@ -17,7 +17,7 @@ func TestAll(t *testing.T) {
 		deli string
 		want []string
 	}{
-		{in: "cmp", deli: ".", want: []string{"cmp", "cmp.Less", "cmp.Ordered", "cmp.Compare"}},
+		{in: "cmp", deli: ".", want: []string{"cmp", "cmp.Compare", "cmp.Less", "cmp.Or", "cmp.Ordered"}},
 		{in: "html/template",
 			deli: ".",
 			want: []string{
