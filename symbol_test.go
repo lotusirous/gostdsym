@@ -171,6 +171,7 @@ func TestAll(t *testing.T) {
 				"errors.Unwrap",
 				"errors.ErrUnsupported",
 				"errors.As",
+				"errors.AsType",
 			},
 		},
 	} {
